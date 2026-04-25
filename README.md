@@ -4,6 +4,8 @@
 
 `healthy_pet` is a desktop health reminder pet built with PySide6 that helps you develop healthy work habits through a cute desktop companion.
 
+当前版本 / Current version: **0.2.0**
+
 ---
 
 ## 👋 关于作者 / About the Author
@@ -51,6 +53,9 @@ I'm proud to say that in three days, I created a product that I need and others 
   
 - **气泡提醒** / **Bubble Notifications**  
   提醒信息通过可爱的气泡显示在宠物上方，不会打断你的工作。
+
+- **提醒声音** / **Reminder Sounds**  
+  使用猫叫声作为提醒声音，并可分别选择护眼、久坐、睡眠提醒是否播放声音。
   
 - **右键菜单** / **Context Menu**  
   右键点击宠物可以打开菜单，快速访问设置、重置计时器等功能。
@@ -65,6 +70,9 @@ I'm proud to say that in three days, I created a product that I need and others 
   
 - **自定义提醒消息** / **Custom Messages**  
   可以修改提醒时显示的文字内容。
+
+- **提醒声音选择** / **Sound Selection**  
+  可以开启或关闭全部提醒声音，也可以单独选择护眼、久坐、睡眠提醒是否有声音。
   
 - **窗口置顶** / **Always on Top**  
   可选择宠物窗口是否始终保持在最前面。
@@ -108,7 +116,7 @@ The program monitors your keyboard and mouse activity:
    - 提醒会持续显示，宠物保持睡觉状态
    - 双击宠物无法关闭睡眠提醒（该睡觉了！）
    - 只有离开电脑超过 60 分钟，提醒才会自动消失
-   - 注：空闲自动消失时间为隐藏设置，可在 `data/healthy_settings.json` 中修改 `sleep_idle_clear_minutes` 字段
+   - 注：空闲自动消失时间为隐藏设置，可在用户配置文件中修改 `sleep_idle_clear_minutes` 字段
 
 **提醒优先级：** 睡眠 > 护眼 > 久坐
 
@@ -117,6 +125,21 @@ The program monitors your keyboard and mouse activity:
 - **重力系统**：拖拽宠物后松手，会有真实的下落效果
 - **边界碰撞**：宠物会在屏幕边缘反弹
 - **地面检测**：宠物会自动停留在屏幕底部
+
+### 用户配置目录 / User Config Directory
+
+程序会把设置和语言选择保存在用户配置目录，而不是项目源码目录。
+
+The app stores settings and language preferences in the user's config directory, not in the source tree.
+
+- Windows: `%APPDATA%\healthy_pet`
+- macOS: `~/Library/Application Support/healthy_pet`
+- Linux: `~/.config/healthy_pet`
+
+主要配置文件 / Main config files:
+
+- `healthy_settings.json`
+- `language.json`
 
 ## 📦 安装使用 / Installation
 
@@ -241,15 +264,13 @@ healthy_pet/
 │   ├── notifications/    # 通知系统 / Notification system
 │   │   ├── bubble.py     # 气泡窗口 / Bubble window
 │   │   └── notifier.py   # 系统托盘通知 / System tray notifications
+│   ├── res/              # 包内资源 / Packaged resources
+│   │   ├── icons/        # 图标 / Icons
+│   │   ├── sounds/       # 提醒声音 / Reminder sounds
+│   │   └── role/Kitty/   # 宠物动画帧 / Pet animation frames
 │   └── ui/               # 用户界面 / User interface
 │       └── settings_window.py  # 设置窗口 / Settings window
-├── data/                 # 用户数据（自动生成）/ User data (auto-generated)
-│   ├── healthy_settings.json  # 用户设置 / User settings
-│   └── language.json     # 语言选择 / Language selection
-├── res/                  # 资源文件 / Resources
-│   ├── icons/            # 图标 / Icons
-│   └── role/Kitty/       # 宠物动画帧 / Pet animation frames
-├── run.py                # 程序入口 / Entry point
+├── run.py                # 源码运行入口 / Source-run entry point
 ├── requirements.txt      # 依赖列表 / Dependencies
 ├── install.bat           # 安装脚本（Windows）/ Install script (Windows)
 └── start.bat             # 启动脚本（Windows）/ Start script (Windows)
