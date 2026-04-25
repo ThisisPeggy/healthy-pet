@@ -62,6 +62,10 @@ def _create_macos_plist() -> str:
     <true/>
     <key>KeepAlive</key>
     <false/>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
 </dict>
 </plist>
 """
