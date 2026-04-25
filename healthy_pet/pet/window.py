@@ -145,6 +145,13 @@ class PetWindow(QWidget):
         self.bubble.show_message(message, self._bubble_anchor())
 
     def update_reminder(self, message: str) -> None:
+        # 只更新文字，不重新计算位置和大小（除非文字长度变化很大）
+        if self.bubble.isVisible():
+            old_text = self.bubble.message_label.text()
+            # 如果文字内容相似（只是数字变化），只更新文字不重新布局
+            if len(message) - len(old_text) < 5:
+                self.bubble.message_label.setText(message)
+                return
         self.bubble.show_message(message, self._bubble_anchor())
 
     def hide_bubble_keep_action(self) -> None:
@@ -173,7 +180,9 @@ class PetWindow(QWidget):
         self._set_frame()
 
     def moveEvent(self, event) -> None:
-        self.bubble.move_to_anchor(self._bubble_anchor())
+        # 气泡跟随宠物移动（下落时由 _update_physics 处理）
+        if self.bubble.isVisible() and not self.falling:
+            self.bubble.move_to_anchor(self._bubble_anchor())
         super().moveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -216,12 +225,8 @@ class PetWindow(QWidget):
         if event.button() == Qt.LeftButton:
             self.dragging = False
             
-            # 如果只是点击没有移动，触发拍拍
-            if not self.mouse_moving and self.on_floor:
-                self._on_pat()
-            
             # 如果移动了，计算抛物线速度
-            elif self.mouse_moving:
+            if self.mouse_moving:
                 # 计算速度（基于最后几个位置）
                 if self.mouse_positions_x[0] != 0:
                     self.drag_speed_x = (self.mouse_positions_x[-1] - self.mouse_positions_x[-3]) / 2.0 * 0.5
@@ -247,12 +252,6 @@ class PetWindow(QWidget):
             self.acknowledge()
             event.accept()
     
-    def _on_pat(self) -> None:
-        """拍拍宠物"""
-        # 播放拍拍动画
-        if "patpat" in self.actions:
-            self.play_action("patpat")
-    
     def _update_physics(self) -> None:
         """更新物理效果（重力、下落、地面检测）"""
         if not self.falling or self.dragging:
@@ -277,7 +276,11 @@ class PetWindow(QWidget):
             self.drag_speed_x = 0
             self.falling = False
             self.on_floor = True
-            self.play_action("idle")
+            # 如果之前是持久动作，恢复之前的动作
+            if self.persistent_action:
+                self.play_action(self.action_name, persistent=True)
+            else:
+                self.play_action("idle")
             new_y = self._ground_y(screen_geo)
         
         # 左右边界检测和反弹
@@ -295,6 +298,10 @@ class PetWindow(QWidget):
         
         # 移动到新位置
         self.move(new_x, new_y)
+        
+        # 同步更新气泡位置
+        if self.bubble.isVisible():
+            self.bubble.move_to_anchor(self._bubble_anchor())
 
     def closeEvent(self, event) -> None:
         self.bubble.close()
@@ -366,15 +373,12 @@ class PetWindow(QWidget):
         angry = self._load_frames("angry")
         drag = self._load_frames("drag")
         fall = self._load_frames("fall")
-        patpat = self._load_frames("patpat")
         
         # 如果没有专门的动画，使用默认的
         if not drag:
             drag = idle
         if not fall:
             fall = idle
-        if not patpat:
-            patpat = idle
         
         return {
             "idle": idle,
@@ -385,7 +389,6 @@ class PetWindow(QWidget):
             "angry": angry,
             "drag": drag,
             "fall": fall,
-            "patpat": patpat,
         }
 
     def _load_frames(self, prefix: str) -> list[QPixmap]:

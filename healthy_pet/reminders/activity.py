@@ -25,6 +25,9 @@ class ActivityTracker(QObject):
         self.mode = "fallback"
         self._mouse_listener: Any = None
         self._keyboard_listener: Any = None
+        # macOS 缓存空闲时间，避免频繁调用 ioreg
+        self._mac_idle_cache = 0.0
+        self._mac_idle_cache_ts = 0.0
 
     def start(self) -> None:
         if sys.platform == "darwin":
@@ -53,7 +56,6 @@ class ActivityTracker(QObject):
             self._keyboard_listener.start()
             self.mode = "pynput"
             self.available = True
-            print("Activity tracker started successfully (pynput mode)")
         except Exception as e:
             print(f"Warning: Failed to start activity tracker: {e}")
             self.available = False
@@ -83,6 +85,11 @@ class ActivityTracker(QObject):
         self.last_input_ts = time.monotonic()
 
     def _mac_idle_seconds(self) -> float | None:
+        # 缓存 0.5 秒，避免频繁调用 ioreg
+        now = time.monotonic()
+        if now - self._mac_idle_cache_ts < 0.5:
+            return self._mac_idle_cache + (now - self._mac_idle_cache_ts)
+        
         try:
             result = subprocess.run(
                 ["ioreg", "-c", "IOHIDSystem"],
@@ -97,4 +104,8 @@ class ActivityTracker(QObject):
         match = re.search(r'"HIDIdleTime"\s*=\s*(\d+)', result.stdout)
         if match is None:
             return None
-        return int(match.group(1)) / 1_000_000_000
+        
+        idle_seconds = int(match.group(1)) / 1_000_000_000
+        self._mac_idle_cache = idle_seconds
+        self._mac_idle_cache_ts = now
+        return idle_seconds

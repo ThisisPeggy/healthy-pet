@@ -17,8 +17,11 @@ class BubbleWindow(QFrame):
             | Qt.WindowStaysOnTopHint
             | Qt.NoDropShadowWindowHint
             | Qt.Tool
+            | Qt.WindowDoesNotAcceptFocus
         )
         self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WA_ShowWithoutActivating, True)
+        self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)  # macOS 专用：始终显示工具窗口
 
         self.container = QFrame(self)
         self.container.setObjectName("BubbleContainer")
@@ -63,7 +66,8 @@ class BubbleWindow(QFrame):
         self.message_label.setText(message)
         self._resize_to_message()
         self.move_to_anchor(anchor)
-        self.show()
+        if not self.isVisible():
+            self.show()
         self.raise_()
 
     def move_to_anchor(self, anchor: QPoint) -> None:

@@ -212,7 +212,7 @@ class ReminderController(QObject):
             kind="standing",
             title="站立倒计时",
             message=f"站立倒计时 {self._format_seconds(remaining_seconds)}",
-            action="idle",
+            action="walk",  # 站立倒计时时也保持走动
             phase="running",
         )
 
@@ -228,7 +228,7 @@ class ReminderController(QObject):
         )
 
     def _tick_eye_rest(self, now: float) -> None:
-        # 如果用户在休息期间有活动，重置倒计时（说明没有真正休息眼睛）
+        # 如果用户在休息期间有活动，重置倒计时（强制休息眼睛）
         if self.activity.is_recently_active(window_seconds=5):
             self.eye_rest_started_ts = now  # 重新开始倒计时
         
