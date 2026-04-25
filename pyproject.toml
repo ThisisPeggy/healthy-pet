@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "healthy-pet"
+version = "0.1.0"
+description = "A desktop health reminder pet that helps you develop healthy work habits"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "ItisP"}
+]
+keywords = ["desktop-pet", "health", "reminder", "eye-care", "productivity"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Desktop Environment",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "PySide6>=6.5",
+    "pynput>=1.7.6",
+    "tendo>=0.3.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ThisisPeggy/healthy_pet"
+Repository = "https://github.com/ThisisPeggy/healthy_pet"
+Issues = "https://github.com/ThisisPeggy/healthy_pet/issues"
+
+[project.scripts]
+healthy-pet = "healthy_pet.__main__:main"
+
+[tool.setuptools]
+packages = ["healthy_pet", "healthy_pet.notifications", "healthy_pet.pet", "healthy_pet.reminders", "healthy_pet.ui"]
+
+[tool.setuptools.package-data]
+healthy_pet = ["py.typed"]
