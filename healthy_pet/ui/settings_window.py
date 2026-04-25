@@ -22,6 +22,7 @@ from healthy_pet.settings import HealthSettings
 
 class SettingsWindow(QDialog):
     settings_saved = Signal(object)
+    language_changed = Signal()
 
     def __init__(self, settings: HealthSettings, parent=None):
         super().__init__(parent)
@@ -143,6 +144,7 @@ class SettingsWindow(QDialog):
         language = self.language_combo.itemData(index)
         if language and language != self.i18n.get_language():
             self.i18n.save_language(language)
+            self.language_changed.emit()
             # 通知用户需要重新打开设置窗口
             from PySide6.QtWidgets import QMessageBox
             if self.i18n.get_language() == "zh_CN":

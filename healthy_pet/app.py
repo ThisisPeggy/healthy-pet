@@ -49,6 +49,8 @@ class HealthyPetApplication(QApplication):
         if self.settings_window is None:
             self.settings_window = SettingsWindow(self.settings)
             self.settings_window.settings_saved.connect(self.apply_settings)
+            self.settings_window.language_changed.connect(self.on_language_changed)
+            self.settings_window.finished.connect(self._settings_window_closed)
         else:
             self.settings_window.set_settings(self.settings)
         self.settings_window.show()
@@ -65,8 +67,16 @@ class HealthyPetApplication(QApplication):
 
     def on_language_changed(self) -> None:
         """语言改变时更新界面"""
+        self.i18n = get_i18n()
         self._update_tray_menu()
+        self.tray.setToolTip(self.i18n.t("tray.title"))
         self.pet.update_language()
+        if self.settings_window is not None:
+            self.settings_window.deleteLater()
+            self.settings_window = None
+
+    def _settings_window_closed(self) -> None:
+        self.settings_window = None
 
     def quit_app(self) -> None:
         self.activity.stop()
