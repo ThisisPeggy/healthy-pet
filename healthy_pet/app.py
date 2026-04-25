@@ -35,11 +35,9 @@ class HealthyPetApplication(QApplication):
         self._sync_startup()
 
         self.pet.acknowledged.connect(self.controller.acknowledge)
-        self.pet.test_reminder_requested.connect(self.controller.trigger_test)
         self.pet.reset_work_timer_requested.connect(self.controller.reset_work_session)
         self.pet.request_settings.connect(self.show_settings)
         self.pet.request_quit.connect(self.quit_app)
-        self.pet.language_changed.connect(self.on_language_changed)
         self.controller.reminder_triggered.connect(self._show_reminder)
         self.controller.reminder_updated.connect(self._update_reminder)
         self.controller.reminder_hidden.connect(self._hide_reminder)

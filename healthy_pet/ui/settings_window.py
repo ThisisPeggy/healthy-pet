@@ -27,6 +27,7 @@ class SettingsWindow(QDialog):
     def __init__(self, settings: HealthSettings, parent=None):
         super().__init__(parent)
         self.i18n = get_i18n()
+        self.settings = settings
         self.setWindowTitle(self.i18n.t("settings.title"))
         self.setMinimumWidth(500)
 
@@ -120,6 +121,7 @@ class SettingsWindow(QDialog):
         self.set_settings(settings)
 
     def set_settings(self, settings: HealthSettings) -> None:
+        self.settings = settings
         self.enabled_check.setChecked(settings.enabled)
         self.start_on_boot_check.setChecked(settings.start_on_boot)
         self.eye_spin.setValue(settings.eye_interval_minutes)
@@ -168,7 +170,7 @@ class SettingsWindow(QDialog):
             sleep_hour=sleep_time.hour(),
             sleep_minute=sleep_time.minute(),
             sleep_message=self.sleep_message_edit.text(),
-            sleep_idle_clear_minutes=60,
+            sleep_idle_clear_minutes=self.settings.sleep_idle_clear_minutes,
             sound_enabled=self.sound_check.isChecked(),
             sound_eye_enabled=self.sound_eye_check.isChecked(),
             sound_standing_enabled=self.sound_standing_check.isChecked(),

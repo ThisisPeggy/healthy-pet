@@ -58,11 +58,9 @@ def _set_dwm_attribute(hwnd: int, attribute: int, value) -> bool:
 
 class PetWindow(QWidget):
     acknowledged = Signal()
-    test_reminder_requested = Signal(str)
     reset_work_timer_requested = Signal()
     request_settings = Signal()
     request_quit = Signal()
-    language_changed = Signal()
 
     def __init__(self, settings: HealthSettings):
         super().__init__(None)

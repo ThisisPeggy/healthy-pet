@@ -8,7 +8,7 @@ version = "0.2.0"
 description = "A desktop health reminder pet that helps you develop healthy work habits"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "ItisP"}
 ]
@@ -16,7 +16,6 @@ keywords = ["desktop-pet", "health", "reminder", "eye-care", "productivity"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
