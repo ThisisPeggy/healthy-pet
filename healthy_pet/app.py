@@ -76,6 +76,7 @@ class HealthyPetApplication(QApplication):
 
     def _show_reminder(self, reminder: Reminder) -> None:
         self.pet.show_reminder(reminder.message, reminder.action)
+        self.notifier.show(reminder.title, reminder.message, reminder.kind)
 
     def _update_reminder(self, reminder: Reminder) -> None:
         self.pet.update_reminder(reminder.message)
@@ -97,6 +98,17 @@ class HealthyPetApplication(QApplication):
     def _update_tray_menu(self) -> None:
         """更新托盘菜单（用于语言切换）"""
         self.tray_menu = QMenu()
+        self.tray_menu.setStyleSheet(
+            """
+            QMenu {
+                text-align: left;
+            }
+            QMenu::item {
+                padding: 6px 28px 6px 18px;
+                text-align: left;
+            }
+            """
+        )
 
         settings_action = QAction(self.i18n.t("menu.settings"), self)
         reset_work_action = QAction(self.i18n.t("menu.reset_timer"), self)

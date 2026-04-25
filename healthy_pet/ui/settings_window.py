@@ -8,10 +8,12 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QDoubleSpinBox,
     QFormLayout,
+    QHBoxLayout,
     QLineEdit,
     QSpinBox,
     QTimeEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 from healthy_pet.i18n import get_i18n
@@ -25,7 +27,7 @@ class SettingsWindow(QDialog):
         super().__init__(parent)
         self.i18n = get_i18n()
         self.setWindowTitle(self.i18n.t("settings.title"))
-        self.setMinimumWidth(360)
+        self.setMinimumWidth(560)
 
         self.enabled_check = QCheckBox(self.i18n.t("settings.enabled"))
         self.start_on_boot_check = QCheckBox(self.i18n.t("settings.start_on_boot"))
@@ -33,6 +35,7 @@ class SettingsWindow(QDialog):
         self.eye_spin.setRange(1, 180)
         self.eye_spin.setSuffix(" " + ("分钟" if self.i18n.get_language() == "zh_CN" else "min"))
         self.eye_message_edit = QLineEdit()
+        self.eye_message_edit.setMinimumWidth(260)
         self.eye_message_edit.setPlaceholderText(self.i18n.t("message.eye.default"))
         self.eye_rest_spin = QSpinBox()
         self.eye_rest_spin.setRange(5, 300)
@@ -41,6 +44,7 @@ class SettingsWindow(QDialog):
         self.standing_spin.setRange(5, 360)
         self.standing_spin.setSuffix(" " + ("分钟" if self.i18n.get_language() == "zh_CN" else "min"))
         self.standing_message_edit = QLineEdit()
+        self.standing_message_edit.setMinimumWidth(260)
         self.standing_message_edit.setPlaceholderText(self.i18n.t("message.standing.default"))
         self.standing_break_spin = QSpinBox()
         self.standing_break_spin.setRange(1, 60)
@@ -51,8 +55,21 @@ class SettingsWindow(QDialog):
         self.sleep_time = QTimeEdit()
         self.sleep_time.setDisplayFormat("HH:mm")
         self.sleep_message_edit = QLineEdit()
+        self.sleep_message_edit.setMinimumWidth(260)
         self.sleep_message_edit.setPlaceholderText(self.i18n.t("message.sleep.default"))
         self.sound_check = QCheckBox(self.i18n.t("settings.sound"))
+        self.sound_eye_check = QCheckBox(self.i18n.t("settings.sound_eye"))
+        self.sound_standing_check = QCheckBox(self.i18n.t("settings.sound_standing"))
+        self.sound_sleep_check = QCheckBox(self.i18n.t("settings.sound_sleep"))
+        self.sound_options = QWidget()
+        sound_layout = QHBoxLayout(self.sound_options)
+        sound_layout.setContentsMargins(0, 0, 0, 0)
+        sound_layout.setSpacing(14)
+        sound_layout.addWidget(self.sound_eye_check)
+        sound_layout.addWidget(self.sound_standing_check)
+        sound_layout.addWidget(self.sound_sleep_check)
+        sound_layout.addStretch(1)
+        self.sound_check.toggled.connect(self.sound_options.setEnabled)
         self.top_check = QCheckBox(self.i18n.t("settings.always_on_top"))
         self.scale_spin = QDoubleSpinBox()
         self.scale_spin.setRange(0.5, 3.0)
@@ -69,6 +86,9 @@ class SettingsWindow(QDialog):
         self.language_combo.currentIndexChanged.connect(self._on_language_changed)
 
         form = QFormLayout()
+        form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        form.setHorizontalSpacing(18)
+        form.setVerticalSpacing(10)
         form.addRow("", self.enabled_check)
         form.addRow("", self.start_on_boot_check)
         form.addRow(self.i18n.t("settings.eye_interval"), self.eye_spin)
@@ -81,6 +101,7 @@ class SettingsWindow(QDialog):
         form.addRow(self.i18n.t("settings.sleep_time"), self.sleep_time)
         form.addRow(self.i18n.t("settings.sleep_message"), self.sleep_message_edit)
         form.addRow("", self.sound_check)
+        form.addRow(self.i18n.t("settings.sound_options"), self.sound_options)
         form.addRow("", self.top_check)
         form.addRow(self.i18n.t("settings.pet_scale"), self.scale_spin)
         form.addRow(self.i18n.t("settings.language"), self.language_combo)
@@ -110,6 +131,10 @@ class SettingsWindow(QDialog):
         self.sleep_time.setTime(QTime(settings.sleep_hour, settings.sleep_minute))
         self.sleep_message_edit.setText(settings.sleep_message)
         self.sound_check.setChecked(settings.sound_enabled)
+        self.sound_eye_check.setChecked(settings.sound_eye_enabled)
+        self.sound_standing_check.setChecked(settings.sound_standing_enabled)
+        self.sound_sleep_check.setChecked(settings.sound_sleep_enabled)
+        self.sound_options.setEnabled(settings.sound_enabled)
         self.top_check.setChecked(settings.always_on_top)
         self.scale_spin.setValue(settings.pet_scale)
 
@@ -143,6 +168,9 @@ class SettingsWindow(QDialog):
             sleep_message=self.sleep_message_edit.text(),
             sleep_idle_clear_minutes=60,
             sound_enabled=self.sound_check.isChecked(),
+            sound_eye_enabled=self.sound_eye_check.isChecked(),
+            sound_standing_enabled=self.sound_standing_check.isChecked(),
+            sound_sleep_enabled=self.sound_sleep_check.isChecked(),
             always_on_top=self.top_check.isChecked(),
             pet_scale=self.scale_spin.value(),
         )

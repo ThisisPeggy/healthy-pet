@@ -26,6 +26,9 @@ class HealthSettings:
     sleep_message: str = "主人不要熬夜哦，跟我一起睡觉吧。"
     sleep_idle_clear_minutes: int = 60
     sound_enabled: bool = True
+    sound_eye_enabled: bool = True
+    sound_standing_enabled: bool = True
+    sound_sleep_enabled: bool = True
     always_on_top: bool = True
     pet_scale: float = 1.0
 

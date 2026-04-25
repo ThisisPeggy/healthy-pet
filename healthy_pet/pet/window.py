@@ -544,6 +544,17 @@ class PetWindow(QWidget):
 
     def _show_context_menu(self, pos: QPoint) -> None:
         menu = QMenu(self)
+        menu.setStyleSheet(
+            """
+            QMenu {
+                text-align: left;
+            }
+            QMenu::item {
+                padding: 6px 28px 6px 18px;
+                text-align: left;
+            }
+            """
+        )
         reset_work_action = QAction(self.i18n.t("menu.reset_timer"), self)
         settings_action = QAction(self.i18n.t("menu.settings"), self)
         quit_action = QAction(self.i18n.t("menu.quit"), self)
