@@ -104,7 +104,7 @@ class HealthyPetApplication(QApplication):
                 text-align: left;
             }
             QMenu::item {
-                padding: 6px 28px 6px 18px;
+                padding: 5px 20px 5px 12px;
                 text-align: left;
             }
             """
