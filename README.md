@@ -178,7 +178,7 @@ python -m healthy_pet
 
 3. 双击 `start.bat` 启动程序 / Double-click `start.bat` to start the app
 
-#### 方法三：从源码安装 / Method 3: Install from Source
+#### 方法三：从源码运行 / Method 3: Run from Source
 
 1. 克隆项目 / Clone the repository:
    ```bash
@@ -188,10 +188,15 @@ python -m healthy_pet
 
 2. 安装依赖 / Install dependencies:
    ```bash
-   python -m pip install -r requirements.txt
+   pip install -r requirements.txt
    ```
 
 3. 启动程序 / Start the app:
+   ```bash
+   python -m healthy_pet
+   ```
+   
+   或使用快捷脚本 / Or use the shortcut script:
    ```bash
    python run.py
    ```
