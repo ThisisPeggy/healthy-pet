@@ -4,7 +4,7 @@
 
 `healthy_pet` is a desktop health reminder pet built with PySide6 that helps you develop healthy work habits through a cute desktop companion.
 
-当前版本 / Current version: **0.2.0**
+当前版本 / Current version: **0.2.1**
 
 ---
 

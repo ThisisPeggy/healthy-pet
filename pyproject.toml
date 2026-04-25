@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "healthy-pet"
-version = "0.2.0"
+version = "0.2.1"
 description = "A desktop health reminder pet that helps you develop healthy work habits"
 readme = "README.md"
 requires-python = ">=3.9"
