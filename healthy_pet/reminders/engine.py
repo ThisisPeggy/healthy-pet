@@ -34,8 +34,8 @@ class ReminderController(QObject):
         self.reminder_phase = "idle"
         self.active_session_seconds = 0.0
         now = time.monotonic()
-        self.last_eye_reminder_ts = now  # 初始化为当前时间，避免启动时立即触发
-        self.last_standing_reminder_ts = now  # 初始化为当前时间，避免启动时立即触发
+        self.last_eye_reminder_seconds = 0.0
+        self.last_standing_reminder_seconds = 0.0
         self.last_loop_ts = now
         self.sleep_reminder_count = 0
         self.break_started_ts = 0.0
@@ -69,8 +69,8 @@ class ReminderController(QObject):
 
     def reset_work_session(self) -> None:
         self.active_session_seconds = 0.0
-        self.last_eye_reminder_ts = 0.0
-        self.last_standing_reminder_ts = 0.0
+        self.last_eye_reminder_seconds = 0.0
+        self.last_standing_reminder_seconds = 0.0
         self._clear_current()
 
     def acknowledge(self) -> None:
@@ -114,8 +114,8 @@ class ReminderController(QObject):
             self.active_session_seconds += elapsed
         elif self.activity.seconds_since_input() >= self.settings.idle_reset_minutes * 60:
             self.active_session_seconds = 0.0
-            self.last_eye_reminder_ts = 0.0
-            self.last_standing_reminder_ts = 0.0
+            self.last_eye_reminder_seconds = 0.0
+            self.last_standing_reminder_seconds = 0.0
 
         if not self.settings.enabled or self.current_reminder is not None:
             return
@@ -136,16 +136,16 @@ class ReminderController(QObject):
             return self._sleep_reminder()
 
         # 护眼提醒优先（每20分钟）
-        eye_elapsed = now - self.last_eye_reminder_ts
+        eye_elapsed = self.active_session_seconds - self.last_eye_reminder_seconds
         if eye_elapsed >= self.settings.eye_interval_minutes * 60:
             self.eye_rest_started_ts = now
-            self.last_eye_reminder_ts = now
+            self.last_eye_reminder_seconds = self.active_session_seconds
             return self._eye_running_reminder(now)
 
         # 久坐提醒（每60分钟）
-        standing_elapsed = now - self.last_standing_reminder_ts
+        standing_elapsed = self.active_session_seconds - self.last_standing_reminder_seconds
         if standing_elapsed >= self.settings.standing_interval_minutes * 60:
-            self.last_standing_reminder_ts = now
+            self.last_standing_reminder_seconds = self.active_session_seconds
             return self._standing_waiting_reminder()
 
         return None

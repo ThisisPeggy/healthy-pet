@@ -19,14 +19,6 @@ def _is_linux() -> bool:
     return sys.platform.startswith("linux")
 
 
-def _project_root() -> Path:
-    return Path(__file__).resolve().parent.parent
-
-
-def _run_script_path() -> Path:
-    return _project_root() / "run.py"
-
-
 def _python_executable() -> Path:
     current = Path(sys.executable)
     if current.name.lower() == "python.exe":
@@ -38,8 +30,7 @@ def _python_executable() -> Path:
 
 def get_startup_command() -> str:
     executable = _python_executable()
-    script = _run_script_path()
-    return f'"{executable}" "{script}"'
+    return f'"{executable}" -m healthy_pet'
 
 
 def _get_macos_plist_path() -> Path:
@@ -55,7 +46,6 @@ def _get_linux_autostart_path() -> Path:
 def _create_macos_plist() -> str:
     """创建 macOS plist 文件内容"""
     executable = _python_executable()
-    script = _run_script_path()
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -65,7 +55,8 @@ def _create_macos_plist() -> str:
     <key>ProgramArguments</key>
     <array>
         <string>{executable}</string>
-        <string>{script}</string>
+        <string>-m</string>
+        <string>healthy_pet</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -79,12 +70,11 @@ def _create_macos_plist() -> str:
 def _create_linux_desktop() -> str:
     """创建 Linux desktop 文件内容"""
     executable = _python_executable()
-    script = _run_script_path()
     return f"""[Desktop Entry]
 Type=Application
 Name=Healthy Pet
 Comment=Desktop health reminder pet
-Exec={executable} {script}
+Exec={executable} -m healthy_pet
 Icon=healthy-pet
 Terminal=false
 Categories=Utility;

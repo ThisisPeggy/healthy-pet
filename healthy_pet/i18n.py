@@ -9,10 +9,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-from healthy_pet.paths import DATA_DIR
+from healthy_pet.paths import DATA_DIR, LEGACY_DATA_DIR
 
 
 LANGUAGE_FILE = DATA_DIR / "language.json"
+LEGACY_LANGUAGE_FILE = LEGACY_DATA_DIR / "language.json"
 
 
 class I18n:
@@ -28,9 +29,10 @@ class I18n:
     
     def load_language(self) -> None:
         """从文件加载语言设置"""
-        if LANGUAGE_FILE.exists():
+        language_file = LANGUAGE_FILE if LANGUAGE_FILE.exists() else LEGACY_LANGUAGE_FILE
+        if language_file.exists():
             try:
-                data = json.loads(LANGUAGE_FILE.read_text(encoding="utf-8"))
+                data = json.loads(language_file.read_text(encoding="utf-8"))
                 lang = data.get("language", "zh_CN")
                 if lang in self.translations:
                     self.current_language = lang

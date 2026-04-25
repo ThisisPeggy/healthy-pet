@@ -4,10 +4,11 @@ import json
 from dataclasses import asdict, dataclass, fields
 from typing import Any
 
-from .paths import DATA_DIR
+from .paths import DATA_DIR, LEGACY_DATA_DIR
 
 
 SETTINGS_FILE = DATA_DIR / "healthy_settings.json"
+LEGACY_SETTINGS_FILE = LEGACY_DATA_DIR / "healthy_settings.json"
 
 
 @dataclass
@@ -61,6 +62,14 @@ class SettingsStore:
 
     def load(self) -> HealthSettings:
         if not self.path.exists():
+            if self.path == SETTINGS_FILE and LEGACY_SETTINGS_FILE.exists():
+                try:
+                    raw = json.loads(LEGACY_SETTINGS_FILE.read_text(encoding="utf-8"))
+                    settings = _coerce_settings(raw)
+                    self.save(settings)
+                    return settings
+                except (OSError, json.JSONDecodeError, TypeError, ValueError):
+                    pass
             settings = HealthSettings()
             self.save(settings)
             return settings

@@ -40,8 +40,13 @@ Issues = "https://github.com/ThisisPeggy/healthy_pet/issues"
 [project.scripts]
 healthy-pet = "healthy_pet.__main__:main"
 
-[tool.setuptools]
-packages = ["healthy_pet", "healthy_pet.notifications", "healthy_pet.pet", "healthy_pet.reminders", "healthy_pet.ui"]
+[tool.setuptools.packages.find]
+include = ["healthy_pet*"]
 
 [tool.setuptools.package-data]
-healthy_pet = ["py.typed"]
+healthy_pet = [
+    "py.typed",
+    "res/icons/*.png",
+    "res/sounds/*.wav",
+    "res/role/Kitty/action/*.png",
+]
