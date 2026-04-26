@@ -6,6 +6,7 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from healthy_pet.i18n import get_i18n
+from healthy_pet.macos import hide_dock_icon
 from healthy_pet.notifications.notifier import Notifier
 from healthy_pet.paths import ICON_PATH
 from healthy_pet.pet.window import PetWindow
@@ -19,6 +20,7 @@ from healthy_pet.ui.settings_window import SettingsWindow
 class HealthyPetApplication(QApplication):
     def __init__(self, argv: list[str]):
         super().__init__(argv)
+        hide_dock_icon()
         self.setQuitOnLastWindowClosed(False)
 
         self.i18n = get_i18n()
