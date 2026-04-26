@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
+from healthy_pet.i18n import get_i18n
 from healthy_pet.settings import HealthSettings
 
 from .activity import ActivityTracker
@@ -37,10 +38,10 @@ class ReminderController(QObject):
         self.last_eye_reminder_seconds = 0.0
         self.last_standing_reminder_seconds = 0.0
         self.last_loop_ts = now
-        self.sleep_reminder_count = 0
         self.break_started_ts = 0.0
         self.eye_rest_started_ts = 0.0
         self.sleeping_after_idle = False
+        self.last_sleep_reminder_date: date | None = None
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.tick)
@@ -126,8 +127,6 @@ class ReminderController(QObject):
 
         self.current_reminder = reminder
         self.reminder_phase = reminder.phase
-        if reminder.kind == "sleep":
-            self.sleep_reminder_count += 1
         self.reminder_triggered.emit(reminder)
 
     def _next_reminder(self, now: float) -> Reminder | None:
@@ -159,6 +158,7 @@ class ReminderController(QObject):
             return False
 
         current = datetime.now()
+        current_date = current.date()
         cutoff = current.replace(
             hour=self.settings.sleep_hour,
             minute=self.settings.sleep_minute,
@@ -166,16 +166,15 @@ class ReminderController(QObject):
             microsecond=0,
         )
         if current < cutoff:
-            self.sleep_reminder_count = 0
             return False
 
-        # 只在第一次触发，之后持续显示
-        return self.sleep_reminder_count == 0
+        return self.last_sleep_reminder_date != current_date
 
     def _sleep_reminder(self) -> Reminder:
+        self.last_sleep_reminder_date = datetime.now().date()
         return Reminder(
             kind="sleep",
-            title="睡觉提醒",
+            title=get_i18n().t("reminder.sleep.title"),
             message=self.settings.sleep_message,
             action="sleep",
         )
@@ -183,7 +182,7 @@ class ReminderController(QObject):
     def _standing_waiting_reminder(self) -> Reminder:
         return Reminder(
             kind="standing",
-            title="久坐提醒",
+            title=get_i18n().t("reminder.standing.title"),
             message=self.settings.standing_message,
             action="walk",
         )
@@ -208,10 +207,11 @@ class ReminderController(QObject):
         self.reminder_updated.emit(self.current_reminder)
 
     def _standing_running_reminder(self, remaining_seconds: int) -> Reminder:
+        title = get_i18n().t("reminder.standing.countdown")
         return Reminder(
             kind="standing",
-            title="站立倒计时",
-            message=f"站立倒计时 {self._format_seconds(remaining_seconds)}",
+            title=title,
+            message=f"{title} {self._format_seconds(remaining_seconds)}",
             action="walk",  # 站立倒计时时也保持走动
             phase="running",
         )
@@ -221,7 +221,7 @@ class ReminderController(QObject):
         remaining = max(0, int(round(self.settings.eye_rest_seconds - elapsed)))
         return Reminder(
             kind="eye",
-            title="护眼提醒",
+            title=get_i18n().t("reminder.eye.title"),
             message=f"{self.settings.eye_message} {remaining}",
             action="idle",
             phase="running",

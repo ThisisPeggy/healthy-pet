@@ -77,6 +77,8 @@ class I18n:
             "reminder.standing.title": "久坐提醒",
             "reminder.sleep.title": "睡觉提醒",
             "reminder.standing.countdown": "站立倒计时",
+            "startup.failed.title": "开机自启设置失败",
+            "startup.failed.message": "无法更新开机自启设置，请检查系统权限。",
             
             # 设置窗口
             "settings.title": "健康提醒设置",
@@ -124,6 +126,8 @@ class I18n:
             "reminder.standing.title": "Standing Reminder",
             "reminder.sleep.title": "Sleep Reminder",
             "reminder.standing.countdown": "Standing Countdown",
+            "startup.failed.title": "Auto-start Setup Failed",
+            "startup.failed.message": "Could not update the auto-start setting. Please check system permissions.",
             
             # Settings window
             "settings.title": "Health Reminder Settings",

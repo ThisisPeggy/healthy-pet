@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "healthy-pet"
-version = "0.2.4"
+version = "0.2.5"
 description = "A desktop health reminder pet that helps you develop healthy work habits"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -38,6 +38,7 @@ Issues = "https://github.com/ThisisPeggy/healthy_pet/issues"
 
 [project.scripts]
 healthy-pet = "healthy_pet.__main__:main"
+healthy-pet-start = "healthy_pet.__main__:launch_detached"
 
 [tool.setuptools.packages.find]
 include = ["healthy_pet*"]

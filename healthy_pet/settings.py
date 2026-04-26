@@ -38,21 +38,135 @@ def _field_names() -> set[str]:
     return {field.name for field in fields(HealthSettings)}
 
 
+def _to_bool(value: Any, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return default
+
+
+def _bounded_int(value: Any, default: int, minimum: int, maximum: int) -> int:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        number = default
+    return max(minimum, min(maximum, number))
+
+
+def _bounded_float(value: Any, default: float, minimum: float, maximum: float) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        number = default
+    return max(minimum, min(maximum, number))
+
+
+def _message(value: Any, default: str) -> str:
+    text = str(value).strip() if value is not None else ""
+    return text or default
+
+
 def _coerce_settings(raw: dict[str, Any]) -> HealthSettings:
     allowed = {key: value for key, value in raw.items() if key in _field_names()}
-    settings = HealthSettings(**allowed)
-    settings.eye_interval_minutes = max(1, min(180, int(settings.eye_interval_minutes)))
-    settings.eye_message = str(settings.eye_message).strip() or HealthSettings.eye_message
-    settings.eye_rest_seconds = max(5, min(300, int(settings.eye_rest_seconds)))
-    settings.standing_interval_minutes = max(5, min(360, int(settings.standing_interval_minutes)))
-    settings.standing_message = str(settings.standing_message).strip() or HealthSettings.standing_message
-    settings.standing_break_minutes = max(1, min(60, int(settings.standing_break_minutes)))
-    settings.idle_reset_minutes = max(1, min(60, int(settings.idle_reset_minutes)))
-    settings.sleep_hour = max(0, min(23, int(settings.sleep_hour)))
-    settings.sleep_minute = max(0, min(59, int(settings.sleep_minute)))
-    settings.sleep_message = str(settings.sleep_message).strip() or HealthSettings.sleep_message
-    settings.sleep_idle_clear_minutes = max(5, min(720, int(settings.sleep_idle_clear_minutes)))
-    settings.pet_scale = max(0.5, min(3.0, float(settings.pet_scale)))
+    settings = HealthSettings()
+    settings.enabled = _to_bool(allowed.get("enabled", settings.enabled), settings.enabled)
+    settings.start_on_boot = _to_bool(
+        allowed.get("start_on_boot", settings.start_on_boot),
+        settings.start_on_boot,
+    )
+    settings.eye_interval_minutes = _bounded_int(
+        allowed.get("eye_interval_minutes", settings.eye_interval_minutes),
+        settings.eye_interval_minutes,
+        1,
+        180,
+    )
+    settings.eye_message = _message(
+        allowed.get("eye_message", settings.eye_message),
+        HealthSettings.eye_message,
+    )
+    settings.eye_rest_seconds = _bounded_int(
+        allowed.get("eye_rest_seconds", settings.eye_rest_seconds),
+        settings.eye_rest_seconds,
+        5,
+        300,
+    )
+    settings.standing_interval_minutes = _bounded_int(
+        allowed.get("standing_interval_minutes", settings.standing_interval_minutes),
+        settings.standing_interval_minutes,
+        5,
+        360,
+    )
+    settings.standing_message = _message(
+        allowed.get("standing_message", settings.standing_message),
+        HealthSettings.standing_message,
+    )
+    settings.standing_break_minutes = _bounded_int(
+        allowed.get("standing_break_minutes", settings.standing_break_minutes),
+        settings.standing_break_minutes,
+        1,
+        60,
+    )
+    settings.idle_reset_minutes = _bounded_int(
+        allowed.get("idle_reset_minutes", settings.idle_reset_minutes),
+        settings.idle_reset_minutes,
+        1,
+        60,
+    )
+    settings.sleep_hour = _bounded_int(
+        allowed.get("sleep_hour", settings.sleep_hour),
+        settings.sleep_hour,
+        0,
+        23,
+    )
+    settings.sleep_minute = _bounded_int(
+        allowed.get("sleep_minute", settings.sleep_minute),
+        settings.sleep_minute,
+        0,
+        59,
+    )
+    settings.sleep_message = _message(
+        allowed.get("sleep_message", settings.sleep_message),
+        HealthSettings.sleep_message,
+    )
+    settings.sleep_idle_clear_minutes = _bounded_int(
+        allowed.get("sleep_idle_clear_minutes", settings.sleep_idle_clear_minutes),
+        settings.sleep_idle_clear_minutes,
+        5,
+        720,
+    )
+    settings.sound_enabled = _to_bool(
+        allowed.get("sound_enabled", settings.sound_enabled),
+        settings.sound_enabled,
+    )
+    settings.sound_eye_enabled = _to_bool(
+        allowed.get("sound_eye_enabled", settings.sound_eye_enabled),
+        settings.sound_eye_enabled,
+    )
+    settings.sound_standing_enabled = _to_bool(
+        allowed.get("sound_standing_enabled", settings.sound_standing_enabled),
+        settings.sound_standing_enabled,
+    )
+    settings.sound_sleep_enabled = _to_bool(
+        allowed.get("sound_sleep_enabled", settings.sound_sleep_enabled),
+        settings.sound_sleep_enabled,
+    )
+    settings.always_on_top = _to_bool(
+        allowed.get("always_on_top", settings.always_on_top),
+        settings.always_on_top,
+    )
+    settings.pet_scale = _bounded_float(
+        allowed.get("pet_scale", settings.pet_scale),
+        settings.pet_scale,
+        0.5,
+        3.0,
+    )
     return settings
 
 
@@ -81,7 +195,12 @@ class SettingsStore:
             self.save(settings)
             return settings
 
-        return _coerce_settings(raw)
+        try:
+            return _coerce_settings(raw)
+        except (TypeError, ValueError):
+            settings = HealthSettings()
+            self.save(settings)
+            return settings
 
     def save(self, settings: HealthSettings) -> None:
         DATA_DIR.mkdir(parents=True, exist_ok=True)

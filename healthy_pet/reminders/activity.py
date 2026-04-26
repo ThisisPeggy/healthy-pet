@@ -28,6 +28,7 @@ class ActivityTracker(QObject):
         # macOS 缓存空闲时间，避免频繁调用 ioreg
         self._mac_idle_cache = 0.0
         self._mac_idle_cache_ts = 0.0
+        self._mac_idle_cache_ttl = 3.0
 
     def start(self) -> None:
         if sys.platform == "darwin":
@@ -85,9 +86,8 @@ class ActivityTracker(QObject):
         self.last_input_ts = time.monotonic()
 
     def _mac_idle_seconds(self) -> float | None:
-        # 缓存 0.5 秒，避免频繁调用 ioreg
         now = time.monotonic()
-        if now - self._mac_idle_cache_ts < 0.5:
+        if now - self._mac_idle_cache_ts < self._mac_idle_cache_ttl:
             return self._mac_idle_cache + (now - self._mac_idle_cache_ts)
         
         try:

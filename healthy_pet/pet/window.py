@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import ctypes
-import re
 import sys
 from ctypes import wintypes
-from pathlib import Path
 
 from PySide6.QtCore import QPoint, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QColor, QMouseEvent, QPainter, QPixmap, QBitmap
+from PySide6.QtGui import QAction, QBitmap, QMouseEvent, QPixmap
 from PySide6.QtWidgets import QApplication, QLabel, QMenu, QVBoxLayout, QWidget
 
 from healthy_pet.i18n import get_i18n
 from healthy_pet.notifications.bubble import BubbleWindow
 from healthy_pet.paths import KITTY_ACTION_DIR
+from healthy_pet.pet.sprites import SpriteLibrary
 from healthy_pet.settings import HealthSettings
 
 
@@ -36,11 +35,6 @@ def _event_global_pos(event: QMouseEvent) -> QPoint:
     if hasattr(event, "globalPosition"):
         return event.globalPosition().toPoint()
     return event.globalPos()
-
-
-def _natural_key(path: Path) -> tuple[str, int]:
-    match = re.search(r"_(\d+)\.png$", path.name)
-    return path.stem, int(match.group(1)) if match else 0
 
 
 def _set_dwm_attribute(hwnd: int, attribute: int, value) -> bool:
@@ -87,6 +81,7 @@ class PetWindow(QWidget):
         # 动画相关
         self.action_name = "idle"
         self.action_frames: list[QPixmap] = []
+        self.action_masks: list[QBitmap | None] = []
         self.action_size = QSize(1, 1)
         self.frame_index = 0
         self.persistent_action = False
@@ -110,7 +105,7 @@ class PetWindow(QWidget):
         layout.setSpacing(0)
         layout.addWidget(self.image_label)
 
-        self.actions = self._load_actions()
+        self.sprites = SpriteLibrary(KITTY_ACTION_DIR)
         self._apply_window_flags()
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAutoFillBackground(False)  # 不自动填充背景
@@ -133,6 +128,7 @@ class PetWindow(QWidget):
 
     def apply_settings(self, settings: HealthSettings) -> None:
         self.settings = settings
+        self.sprites.clear_cache()
         self._apply_window_flags()
         self.play_action(self.action_name)
         self.show()
@@ -167,7 +163,7 @@ class PetWindow(QWidget):
         self.acknowledged.emit()
 
     def play_action(self, action: str, persistent: bool = False) -> None:
-        self.action_name = action if action in self.actions else "idle"
+        self.action_name = action if self.sprites.has_action(action) else "idle"
         if self.action_name not in {"drag", "fall"}:
             self.base_action_name = self.action_name
             self.base_action_persistent = persistent
@@ -175,7 +171,7 @@ class PetWindow(QWidget):
         if self.action_name == "walk":
             self._reset_walk_motion()
             frames_key = "left_walk" if self.walk_direction < 0 else "right_walk"
-        self.action_frames = self._scaled_frames(self.actions[frames_key])
+        self._set_sprite_frames(frames_key)
         max_width = max(frame.width() for frame in self.action_frames)
         max_height = max(frame.height() for frame in self.action_frames)
         self.action_size = QSize(max_width, max_height)
@@ -369,56 +365,10 @@ class PetWindow(QWidget):
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
         )
 
-    def _load_actions(self) -> dict[str, list[QPixmap]]:
-        idle = self._load_frames("stand")
-        left = self._load_frames("leftwalk")
-        right = self._load_frames("rightwalk")
-        sleep = self._load_frames("sleep")
-        angry = self._load_frames("angry")
-        drag = self._load_frames("drag")
-        fall = self._load_frames("fall")
-        
-        # 如果没有专门的动画，使用默认的
-        if not drag:
-            drag = idle
-        if not fall:
-            fall = idle
-        
-        return {
-            "idle": idle,
-            "walk": right,
-            "left_walk": left,
-            "right_walk": right,
-            "sleep": sleep,
-            "angry": angry,
-            "drag": drag,
-            "fall": fall,
-        }
-
-    def _load_frames(self, prefix: str) -> list[QPixmap]:
-        files = sorted(KITTY_ACTION_DIR.glob(f"{prefix}_*.png"), key=_natural_key)
-        frames = [QPixmap(str(path)) for path in files]
-        frames = [frame for frame in frames if not frame.isNull()]
-        return frames or [self._fallback_frame()]
-
-    def _scaled_frames(self, frames: list[QPixmap]) -> list[QPixmap]:
-        scaled: list[QPixmap] = []
-        for frame in frames:
-            width = max(1, int(frame.width() * self.settings.pet_scale))
-            height = max(1, int(frame.height() * self.settings.pet_scale))
-            scaled.append(frame.scaled(width, height, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        return scaled
-
-    def _fallback_frame(self) -> QPixmap:
-        pixmap = QPixmap(120, 120)
-        pixmap.fill(Qt.transparent)
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QColor("#009faa"))
-        painter.setPen(Qt.NoPen)
-        painter.drawEllipse(16, 20, 88, 88)
-        painter.end()
-        return pixmap
+    def _set_sprite_frames(self, action_key: str) -> None:
+        frames = self.sprites.scaled_frames(action_key, self.settings.pet_scale)
+        self.action_frames = frames.pixmaps
+        self.action_masks = frames.masks
 
     def _advance_frame(self) -> None:
         if not self.action_frames:
@@ -454,12 +404,12 @@ class PetWindow(QWidget):
 
         # Match the native window shape to the sprite alpha to avoid a
         # rectangular host window showing around the pet on Windows.
-        mask = pixmap.mask()
-        if mask.isNull():
-            alpha_mask = pixmap.toImage().createAlphaMask()
-            if not alpha_mask.isNull():
-                mask = QBitmap.fromImage(alpha_mask)
-        if not mask.isNull():
+        mask = (
+            self.action_masks[self.frame_index]
+            if self.frame_index < len(self.action_masks)
+            else None
+        )
+        if mask is not None:
             self.setMask(mask)
         else:
             self.clearMask()
@@ -498,10 +448,10 @@ class PetWindow(QWidget):
             self.walk_direction = 1
 
     def _set_walk_frames(self, direction: str) -> None:
-        frames = self.actions.get("left_walk" if direction == "left" else "right_walk")
-        if not frames:
+        action_key = "left_walk" if direction == "left" else "right_walk"
+        if not self.sprites.has_action(action_key):
             return
-        self.action_frames = self._scaled_frames(frames)
+        self._set_sprite_frames(action_key)
         max_width = max(frame.width() for frame in self.action_frames)
         max_height = max(frame.height() for frame in self.action_frames)
         self.action_size = QSize(max_width, max_height)
@@ -509,7 +459,7 @@ class PetWindow(QWidget):
         self.frame_index = 0
 
     def _restore_base_action(self) -> None:
-        action = self.base_action_name if self.base_action_name in self.actions else "idle"
+        action = self.base_action_name if self.sprites.has_action(self.base_action_name) else "idle"
         self.play_action(action, persistent=self.base_action_persistent)
 
     def _move_to_default_position(self) -> None:

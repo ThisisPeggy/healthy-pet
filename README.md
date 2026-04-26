@@ -2,7 +2,7 @@
 
 一个桌面健康提醒小宠物，帮助你养成健康的工作习惯。
 
-当前版本：**0.2.4**
+当前版本：**0.2.5**
 
 [English](README_EN.md)
 
@@ -100,6 +100,12 @@ pip install healthy-pet
 healthy-pet
 ```
 
+如需关闭终端后仍保持运行，使用后台启动命令：
+
+```bash
+healthy-pet-start
+```
+
 或：
 
 ```bash
@@ -115,6 +121,12 @@ git clone https://github.com/ThisisPeggy/healthy_pet.git
 cd healthy_pet
 pip install -r requirements.txt
 python -m healthy_pet
+```
+
+如果希望启动后关闭终端也不影响宠物运行，先执行 `pip install -e .`，然后运行：
+
+```bash
+healthy-pet-start
 ```
 
 **注意**：如需使用开机自启功能，需额外执行：

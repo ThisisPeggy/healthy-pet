@@ -2,7 +2,7 @@
 
 A desktop health reminder pet that helps you develop healthy work habits.
 
-Current version: **0.2.4**
+Current version: **0.2.5**
 
 [中文](README.md)
 
@@ -100,6 +100,12 @@ Run:
 healthy-pet
 ```
 
+To keep the pet running after closing the terminal, use the background launcher:
+
+```bash
+healthy-pet-start
+```
+
 Or:
 
 ```bash
@@ -115,6 +121,12 @@ git clone https://github.com/ThisisPeggy/healthy_pet.git
 cd healthy_pet
 pip install -r requirements.txt
 python -m healthy_pet
+```
+
+If you want the pet to keep running after the terminal is closed, run `pip install -e .` first, then:
+
+```bash
+healthy-pet-start
 ```
 
 **Note**: To use the auto-start feature, you need to additionally run:

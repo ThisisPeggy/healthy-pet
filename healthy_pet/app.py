@@ -136,4 +136,13 @@ class HealthyPetApplication(QApplication):
         self.controller.reset_work_session()
 
     def _sync_startup(self) -> None:
-        set_startup_enabled(self.settings.start_on_boot)
+        if set_startup_enabled(self.settings.start_on_boot):
+            return
+        if self.settings.start_on_boot and self.tray.isVisible():
+            icon = getattr(QSystemTrayIcon, "Warning", QSystemTrayIcon.MessageIcon.Warning)
+            self.tray.showMessage(
+                self.i18n.t("startup.failed.title"),
+                self.i18n.t("startup.failed.message"),
+                icon,
+                8000,
+            )
