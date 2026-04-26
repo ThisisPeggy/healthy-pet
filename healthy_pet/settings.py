@@ -203,7 +203,7 @@ class SettingsStore:
             return settings
 
     def save(self, settings: HealthSettings) -> None:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(
             json.dumps(asdict(settings), ensure_ascii=False, indent=2),
             encoding="utf-8",

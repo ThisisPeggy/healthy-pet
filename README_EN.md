@@ -2,7 +2,7 @@
 
 A desktop health reminder pet that helps you develop healthy work habits.
 
-Current version: **0.2.6**
+Current version: **0.2.7**
 
 [中文](README.md)
 
@@ -33,6 +33,7 @@ I'm proud to say that in three days, I created a product that I need and others 
 - Drag the pet anywhere on screen
 - Multiple animations: standing, walking, sleeping, angry, dragging, falling
 - Bubble notifications that don't interrupt work
+- Double-click the pet or reminder bubble to acknowledge reminders
 - Customizable reminder sounds
 - Right-click menu for quick settings access
 
@@ -44,6 +45,15 @@ I'm proud to say that in three days, I created a product that I need and others 
 - Always on top option
 - Pet scale adjustment (0.5x - 3.0x)
 - Multi-language support (Chinese/English)
+
+### Always-on-top behavior
+
+When "Always on Top" is enabled, the pet tries to stay above other windows:
+
+- **macOS**: Joins fullscreen app Spaces and uses a higher native window level
+- **Windows**: Uses the system topmost window state, which works above normal, maximized, and many regular fullscreen windows
+- **Linux X11**: Requests `_NET_WM_STATE_ABOVE`, with an `xdotool` fallback
+- **Linux Wayland / exclusive fullscreen games / secure system desktops**: cannot be guaranteed due to OS restrictions
 
 ## How It Works
 
@@ -172,7 +182,7 @@ healthy_pet/
 │   ├── startup.py          # Auto-start functionality
 │   ├── i18n.py             # Internationalization
 │   ├── paths.py            # Path configuration
-│   ├── pet/                # Pet window
+│   ├── pet/                # Pet window, animation, motion, native topmost handling
 │   ├── reminders/          # Reminder system
 │   ├── notifications/      # Notification system
 │   ├── res/                # Resources
@@ -180,6 +190,14 @@ healthy_pet/
 ├── run.py                  # Quick launch script
 └── requirements.txt        # Dependencies
 ```
+
+Key modules in `healthy_pet/pet/`:
+
+- `window.py`: Qt pet window and interaction events
+- `animation.py`: Animation state and walking direction
+- `motion.py`: Dragging, falling, and bounce state
+- `native_window.py`: Native topmost handling for Windows / macOS / Linux
+- `sprites.py`: Sprite frame loading and scaling
 
 ## Credits
 

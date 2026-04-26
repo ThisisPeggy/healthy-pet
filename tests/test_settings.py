@@ -49,6 +49,16 @@ class SettingsCoercionTests(unittest.TestCase):
 
         self.assertEqual(settings.eye_interval_minutes, HealthSettings.eye_interval_minutes)
 
+    def test_store_save_creates_custom_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "nested" / "settings.json"
+
+            SettingsStore(path).save(HealthSettings(enabled=False))
+
+            data = json.loads(path.read_text(encoding="utf-8"))
+
+        self.assertFalse(data["enabled"])
+
 
 if __name__ == "__main__":
     unittest.main()

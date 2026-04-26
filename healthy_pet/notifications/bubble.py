@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QPoint, Qt, Signal
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout
 
 
@@ -75,6 +76,13 @@ class BubbleWindow(QFrame):
 
     def clear(self) -> None:
         self.hide()
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.LeftButton:
+            self.acknowledged.emit()
+            event.accept()
+            return
+        super().mouseDoubleClickEvent(event)
 
     def _resize_to_message(self) -> None:
         """根据文字内容智能调整气泡大小"""
