@@ -15,6 +15,7 @@ from healthy_pet.pet.sprites import SpriteLibrary
 from healthy_pet.settings import HealthSettings
 
 
+# Windows DWM attributes
 DWMWA_NCRENDERING_POLICY = 2
 DWMWA_WINDOW_CORNER_PREFERENCE = 33
 DWMWA_BORDER_COLOR = 34
@@ -24,11 +25,18 @@ DWMNCRP_DISABLED = 1
 DWMWCP_DONOTROUND = 1
 DWMWA_COLOR_NONE = 0xFFFFFFFE
 
+# Windows SetWindowPos flags
 SWP_NOSIZE = 0x0001
 SWP_NOMOVE = 0x0002
-SWP_NOZORDER = 0x0004
 SWP_NOACTIVATE = 0x0010
 SWP_FRAMECHANGED = 0x0020
+HWND_TOPMOST = -1
+
+# macOS window levels
+kCGFloatingWindowLevel = 3
+NSWindowCollectionBehaviorCanJoinAllSpaces = 1 << 0
+NSWindowCollectionBehaviorStationary = 1 << 4
+NSWindowCollectionBehaviorFullScreenAuxiliary = 1 << 18
 
 
 def _event_global_pos(event: QMouseEvent) -> QPoint:
@@ -48,6 +56,159 @@ def _set_dwm_attribute(hwnd: int, attribute: int, value) -> bool:
         return result == 0
     except Exception:
         return False
+
+
+def _apply_macos_window_level(window: QWidget) -> None:
+    """Set window level on macOS to appear above fullscreen apps."""
+    if sys.platform != "darwin":
+        return
+
+    try:
+        import objc
+        from AppKit import NSWindow, NSApplication
+
+        # Get the NSWindow from Qt widget
+        ns_view = window.winId()
+        ns_window = objc.objc_object(c_void_p=int(ns_view))
+
+        # Try to get the NSWindow properly
+        app = NSApplication.sharedApplication()
+        for win in app.windows():
+            if win.contentView() and win.contentView().subviews():
+                for subview in win.contentView().subviews():
+                    if int(subview.description().encode().hex(), 16) == int(ns_view):
+                        ns_window = win
+                        break
+
+        # Set window level to floating
+        ns_window.setLevel_(kCGFloatingWindowLevel)
+
+        # Allow window to appear in fullscreen spaces
+        ns_window.setCollectionBehavior_(
+            NSWindowCollectionBehaviorCanJoinAllSpaces
+            | NSWindowCollectionBehaviorStationary
+            | NSWindowCollectionBehaviorFullScreenAuxiliary
+        )
+    except ImportError:
+        # Fallback: use ctypes if PyObjC is not available
+        _apply_macos_window_level_ctypes(window)
+    except Exception:
+        pass
+
+
+def _apply_macos_window_level_ctypes(window: QWidget) -> None:
+    """Fallback implementation using ctypes for macOS."""
+    try:
+        objc = ctypes.cdll.LoadLibrary("/usr/lib/libobjc.A.dylib")
+
+        objc.objc_getClass.restype = ctypes.c_void_p
+        objc.objc_getClass.argtypes = [ctypes.c_char_p]
+
+        objc.sel_registerName.restype = ctypes.c_void_p
+        objc.sel_registerName.argtypes = [ctypes.c_char_p]
+
+        objc.objc_msgSend.restype = ctypes.c_void_p
+        objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+
+        # Get NSWindow from Qt widget
+        win_id = int(window.winId())
+
+        # This is a simplified approach - set the window's level via NSView
+        ns_view_class = objc.objc_getClass(b"NSView")
+        if ns_view_class:
+            # Get window from view
+            window_sel = objc.sel_registerName(b"window")
+            objc.objc_msgSend.restype = ctypes.c_void_p
+            objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+
+            # Create NSView from winId (this is the Qt view)
+            # Qt on macOS uses NSView, we need to get its window
+
+            # Alternative: use NSApplication to find our window
+            ns_app_class = objc.objc_getClass(b"NSApplication")
+            shared_app_sel = objc.sel_registerName(b"sharedApplication")
+            ns_app = objc.objc_msgSend(ns_app_class, shared_app_sel)
+
+            windows_sel = objc.sel_registerName(b"windows")
+            objc.objc_msgSend.restype = ctypes.c_void_p
+            windows = objc.objc_msgSend(ns_app, windows_sel)
+
+            # Iterate through windows to find ours
+            count_sel = objc.sel_registerName(b"count")
+            objc.objc_msgSend.restype = ctypes.c_ulong
+            objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+            count = objc.objc_msgSend(windows, count_sel)
+
+            object_at_sel = objc.sel_registerName(b"objectAtIndex:")
+            objc.objc_msgSend.restype = ctypes.c_void_p
+            objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong]
+
+            set_level_sel = objc.sel_registerName(b"setLevel:")
+            objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+
+            set_collection_sel = objc.sel_registerName(b"setCollectionBehavior:")
+            objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong]
+
+            for i in range(count):
+                ns_win = objc.objc_msgSend(windows, object_at_sel, i)
+                # Set level and collection behavior for each window
+                objc.objc_msgSend(ns_win, set_level_sel, kCGFloatingWindowLevel)
+                objc.objc_msgSend(
+                    ns_win,
+                    set_collection_sel,
+                    NSWindowCollectionBehaviorCanJoinAllSpaces
+                    | NSWindowCollectionBehaviorStationary
+                    | NSWindowCollectionBehaviorFullScreenAuxiliary
+                )
+    except Exception:
+        pass
+
+
+def _apply_linux_window_above(window: QWidget) -> None:
+    """Set window to stay above on Linux using X11."""
+    if sys.platform not in ("linux", "linux2"):
+        return
+
+    try:
+        # Try using X11 via python-xlib if available
+        from Xlib import X, display
+        from Xlib.protocol import event
+
+        dpy = display.Display()
+        win = dpy.create_resource_object("window", int(window.winId()))
+
+        # Get the _NET_WM_STATE_ABOVE atom
+        net_wm_state = dpy.intern_atom("_NET_WM_STATE")
+        net_wm_state_above = dpy.intern_atom("_NET_WM_STATE_ABOVE")
+
+        # Set the window state
+        win.change_property(
+            net_wm_state,
+            Xatom.ATOM,
+            32,
+            [net_wm_state_above],
+        )
+        dpy.flush()
+    except ImportError:
+        # Fallback: try using xdotool if available
+        _apply_linux_window_above_xdotool(window)
+    except Exception:
+        pass
+
+
+def _apply_linux_window_above_xdotool(window: QWidget) -> None:
+    """Fallback implementation using xdotool for Linux."""
+    import subprocess
+
+    try:
+        win_id = int(window.winId())
+        subprocess.run(
+            ["xdotool", "windowraise", str(win_id)],
+            check=False,
+            capture_output=True,
+        )
+    except Exception:
+        pass
 
 
 class PetWindow(QWidget):
@@ -121,6 +282,11 @@ class PetWindow(QWidget):
         self.physics_timer = QTimer(self)
         self.physics_timer.timeout.connect(self._update_physics)
         self.physics_timer.start(30)  # 约33fps
+
+        # 置顶维护定时器（每5秒重新应用置顶设置）
+        self._topmost_timer = QTimer(self)
+        self._topmost_timer.timeout.connect(self._maintain_topmost)
+        self._topmost_timer.start(5000)
 
         self.play_action("idle")
         self._move_to_default_position()
@@ -334,9 +500,16 @@ class PetWindow(QWidget):
         self.repaint()
 
     def _apply_native_window_tweaks(self) -> None:
-        if sys.platform != "win32":
-            return
+        """Apply platform-specific window tweaks for proper topmost behavior."""
+        if sys.platform == "win32":
+            self._apply_windows_topmost()
+        elif sys.platform == "darwin":
+            _apply_macos_window_level(self)
+        elif sys.platform in ("linux", "linux2"):
+            _apply_linux_window_above(self)
 
+    def _apply_windows_topmost(self) -> None:
+        """Apply Windows-specific topmost window settings."""
         hwnd = int(self.winId())
         if not hwnd:
             return
@@ -355,15 +528,39 @@ class PetWindow(QWidget):
             use_alpha = wintypes.BOOL(1)
             _set_dwm_attribute(hwnd, DWMWA_REDIRECTIONBITMAP_ALPHA, use_alpha)
 
-        ctypes.windll.user32.SetWindowPos(
-            wintypes.HWND(hwnd),
-            wintypes.HWND(0),
-            0,
-            0,
-            0,
-            0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
-        )
+        # Set window to topmost if always_on_top is enabled
+        if self.settings.always_on_top:
+            ctypes.windll.user32.SetWindowPos(
+                wintypes.HWND(hwnd),
+                wintypes.HWND(HWND_TOPMOST),
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+            )
+
+    def _maintain_topmost(self) -> None:
+        """Periodically re-apply topmost settings to ensure window stays on top."""
+        if not self.settings.always_on_top:
+            return
+
+        if sys.platform == "win32":
+            hwnd = int(self.winId())
+            if hwnd:
+                ctypes.windll.user32.SetWindowPos(
+                    wintypes.HWND(hwnd),
+                    wintypes.HWND(HWND_TOPMOST),
+                    0,
+                    0,
+                    0,
+                    0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+                )
+        elif sys.platform == "darwin":
+            _apply_macos_window_level(self)
+        elif sys.platform in ("linux", "linux2"):
+            _apply_linux_window_above(self)
 
     def _set_sprite_frames(self, action_key: str) -> None:
         frames = self.sprites.scaled_frames(action_key, self.settings.pet_scale)

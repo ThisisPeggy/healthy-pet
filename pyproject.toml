@@ -31,6 +31,13 @@ dependencies = [
     "tendo>=0.3.0",
 ]
 
+[project.optional-dependencies]
+macos = ["pyobjc-framework-Cocoa>=10.0"]
+linux = ["python-xlib>=0.33"]
+all = [
+    "healthy-pet[macos,linux]",
+]
+
 [project.urls]
 Homepage = "https://github.com/ThisisPeggy/healthy_pet"
 Repository = "https://github.com/ThisisPeggy/healthy_pet"
