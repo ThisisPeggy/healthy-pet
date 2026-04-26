@@ -2,7 +2,7 @@
 
 A desktop health reminder pet that helps you develop healthy work habits.
 
-Current version: **0.2.2**
+Current version: **0.2.3**
 
 [中文](README.md)
 

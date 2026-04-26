@@ -217,7 +217,7 @@ class PetWindow(QWidget):
             
             # 显示拖拽动画
             if self.action_name != "drag":
-                self.play_action("drag", persistent=True)
+                self.play_action("drag", persistent=self.persistent_action)
             
             event.accept()
 
@@ -238,7 +238,7 @@ class PetWindow(QWidget):
                 # 开始下落
                 self.falling = True
                 self.on_floor = False
-                self.play_action("fall", persistent=True)
+                self.play_action("fall", persistent=self.persistent_action)
                 
                 # 重置鼠标位置记录
                 self.mouse_positions_x = [0, 0, 0, 0]
