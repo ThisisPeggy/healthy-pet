@@ -117,6 +117,12 @@ pip install -r requirements.txt
 python -m healthy_pet
 ```
 
+**注意**：如需使用开机自启功能，需额外执行：
+
+```bash
+pip install -e .
+```
+
 ### Windows 批处理文件
 
 双击 `install.bat` 安装依赖，双击 `start.bat` 启动程序。

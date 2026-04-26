@@ -117,6 +117,12 @@ pip install -r requirements.txt
 python -m healthy_pet
 ```
 
+**Note**: To use the auto-start feature, you need to additionally run:
+
+```bash
+pip install -e .
+```
+
 ### Windows Batch Files
 
 Double-click `install.bat` to install dependencies, double-click `start.bat` to launch.
