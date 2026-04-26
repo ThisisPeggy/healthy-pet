@@ -90,6 +90,8 @@ class PetWindow(QWidget):
         self.action_size = QSize(1, 1)
         self.frame_index = 0
         self.persistent_action = False
+        self.base_action_name = "idle"
+        self.base_action_persistent = False
         self.walk_origin_x = 0
         self.walk_direction = 1
         self.walk_range = 90
@@ -166,6 +168,9 @@ class PetWindow(QWidget):
 
     def play_action(self, action: str, persistent: bool = False) -> None:
         self.action_name = action if action in self.actions else "idle"
+        if self.action_name not in {"drag", "fall"}:
+            self.base_action_name = self.action_name
+            self.base_action_persistent = persistent
         frames_key = self.action_name
         if self.action_name == "walk":
             self._reset_walk_motion()
@@ -191,10 +196,10 @@ class PetWindow(QWidget):
             self.mouse_moving = False
             self.drag_offset = _event_global_pos(event) - self.frameGeometry().topLeft()
             
-            # 如果在地面上，停止物理效果
-            if self.on_floor:
+            # 抓住宠物时暂停飞行/下落，但不要让普通点击离开地面状态。
+            if self.falling:
                 self.falling = False
-                self.on_floor = False
+            self.play_action("drag", persistent=True)
             
             event.accept()
             return
@@ -217,7 +222,7 @@ class PetWindow(QWidget):
             
             # 显示拖拽动画
             if self.action_name != "drag":
-                self.play_action("drag", persistent=self.persistent_action)
+                self.play_action("drag", persistent=True)
             
             event.accept()
 
@@ -225,7 +230,7 @@ class PetWindow(QWidget):
         if event.button() == Qt.LeftButton:
             self.dragging = False
             
-            # 如果移动了，计算抛物线速度
+            # 松开鼠标后进入脱手下落状态；没有移动时速度为 0，会很快落回当前地面。
             if self.mouse_moving:
                 # 计算速度（基于最后几个位置）
                 if self.mouse_positions_x[0] != 0:
@@ -234,15 +239,18 @@ class PetWindow(QWidget):
                 else:
                     self.drag_speed_x = 0
                     self.drag_speed_y = 0
-                
-                # 开始下落
-                self.falling = True
-                self.on_floor = False
-                self.play_action("fall", persistent=self.persistent_action)
-                
-                # 重置鼠标位置记录
-                self.mouse_positions_x = [0, 0, 0, 0]
-                self.mouse_positions_y = [0, 0, 0, 0]
+            else:
+                self.drag_speed_x = 0
+                self.drag_speed_y = 0
+
+            # 开始下落
+            self.falling = True
+            self.on_floor = False
+            self.play_action("fall", persistent=True)
+
+            # 重置鼠标位置记录
+            self.mouse_positions_x = [0, 0, 0, 0]
+            self.mouse_positions_y = [0, 0, 0, 0]
             
             self.mouse_moving = False
             event.accept()
@@ -276,11 +284,7 @@ class PetWindow(QWidget):
             self.drag_speed_x = 0
             self.falling = False
             self.on_floor = True
-            # 如果之前是持久动作，恢复之前的动作
-            if self.persistent_action:
-                self.play_action(self.action_name, persistent=True)
-            else:
-                self.play_action("idle")
+            self._restore_base_action()
             new_y = self._ground_y(screen_geo)
         
         # 左右边界检测和反弹
@@ -503,6 +507,10 @@ class PetWindow(QWidget):
         self.action_size = QSize(max_width, max_height)
         self.image_label.setFixedSize(self.action_size)
         self.frame_index = 0
+
+    def _restore_base_action(self) -> None:
+        action = self.base_action_name if self.base_action_name in self.actions else "idle"
+        self.play_action(action, persistent=self.base_action_persistent)
 
     def _move_to_default_position(self) -> None:
         geometry = self._screen_geometry()
