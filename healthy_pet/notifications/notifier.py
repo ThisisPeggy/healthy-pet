@@ -26,9 +26,6 @@ class Notifier:
                 self.sound.play()
             else:
                 QApplication.beep()
-        if self.tray.isVisible():
-            icon = getattr(QSystemTrayIcon, "Information", QSystemTrayIcon.MessageIcon.Information)
-            self.tray.showMessage(title, message, icon, 8000)
 
     def _should_play_sound(self, kind: str | None) -> bool:
         if not self.settings.sound_enabled:

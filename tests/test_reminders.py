@@ -1,5 +1,5 @@
 import unittest
-from datetime import date
+from datetime import date, datetime
 from unittest.mock import patch
 
 from PySide6.QtCore import QCoreApplication
@@ -39,8 +39,12 @@ class ReminderControllerTests(unittest.TestCase):
     def test_sleep_reminder_only_triggers_once_per_date(self) -> None:
         controller = self.make_controller()
 
-        first = controller._next_reminder(0.0)
-        second = controller._next_reminder(0.0)
+        with patch("healthy_pet.reminders.engine.datetime") as mock_datetime:
+            mock_datetime.now.return_value = datetime(2026, 4, 27, 23, 45, 0)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+
+            first = controller._next_reminder(0.0)
+            second = controller._next_reminder(0.0)
 
         self.assertIsNotNone(first)
         self.assertEqual(first.kind, "sleep")
@@ -50,7 +54,27 @@ class ReminderControllerTests(unittest.TestCase):
         controller = self.make_controller()
         controller.last_sleep_reminder_date = date(2000, 1, 1)
 
-        reminder = controller._next_reminder(0.0)
+        with patch("healthy_pet.reminders.engine.datetime") as mock_datetime:
+            mock_datetime.now.return_value = datetime(2026, 4, 28, 1, 15, 0)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+
+            reminder = controller._next_reminder(0.0)
+
+        self.assertIsNotNone(reminder)
+        self.assertEqual(reminder.kind, "sleep")
+
+    def test_sleep_reminder_triggers_after_relaunch_even_without_recent_activity(self) -> None:
+        activity = FakeActivity(idle_seconds=12 * 60 * 60)
+        controller = self.make_controller(
+            settings=HealthSettings(sleep_hour=23, sleep_minute=30),
+            activity=activity,
+        )
+
+        with patch("healthy_pet.reminders.engine.datetime") as mock_datetime:
+            mock_datetime.now.return_value = datetime(2026, 4, 28, 1, 15, 0)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+
+            reminder = controller._next_reminder(0.0)
 
         self.assertIsNotNone(reminder)
         self.assertEqual(reminder.kind, "sleep")
@@ -69,7 +93,11 @@ class ReminderControllerTests(unittest.TestCase):
         controller = self.make_controller(settings=settings)
         controller.active_session_seconds = 60 * 60
 
-        reminder = controller._next_reminder(100.0)
+        with patch("healthy_pet.reminders.engine.datetime") as mock_datetime:
+            mock_datetime.now.return_value = datetime(2026, 4, 27, 20, 0, 0)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+
+            reminder = controller._next_reminder(100.0)
 
         self.assertIsNotNone(reminder)
         self.assertEqual(reminder.kind, "eye")

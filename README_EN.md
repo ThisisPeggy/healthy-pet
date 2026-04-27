@@ -2,7 +2,7 @@
 
 A desktop health reminder pet that helps you develop healthy work habits.
 
-Current version: **0.2.8**
+Current version: **0.2.9**
 
 [中文](README.md)
 
@@ -32,7 +32,7 @@ I'm proud to say that in three days, I created a product that I need and others 
 
 - Drag the pet anywhere on screen
 - Multiple animations: standing, walking, sleeping, angry, dragging, falling
-- Bubble notifications that don't interrupt work
+- Bubble notifications with optional sound, without interrupting work
 - Double-click the pet or reminder bubble to acknowledge reminders
 - Customizable reminder sounds
 - Right-click menu for quick settings access

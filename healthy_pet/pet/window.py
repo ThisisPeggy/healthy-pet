@@ -136,9 +136,7 @@ class PetWindow(QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
             drag_offset = _event_global_pos(event) - self.frameGeometry().topLeft()
-            self.motion.start_drag(drag_offset)
-            self.play_action("drag", persistent=True)
-            
+            self.motion.start_drag(drag_offset, _event_global_pos(event))
             event.accept()
             return
         if event.button() == Qt.RightButton:
@@ -155,15 +153,18 @@ class PetWindow(QWidget):
             self.motion.record_mouse_position(cursor_pos)
             
             # 显示拖拽动画
-            if self.animation.action_name != "drag":
+            if self.motion.should_show_drag(cursor_pos) and self.animation.action_name != "drag":
                 self.play_action("drag", persistent=True)
             
             event.accept()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
-            self.motion.release_drag()
-            self.play_action("fall", persistent=True)
+            if self.motion.drag_visual_active or self.motion.mouse_moving:
+                self.motion.release_drag()
+                self.play_action("fall", persistent=True)
+            else:
+                self.motion.cancel_drag()
             event.accept()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:

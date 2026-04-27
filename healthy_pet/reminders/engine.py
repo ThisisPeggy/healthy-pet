@@ -153,9 +153,6 @@ class ReminderController(QObject):
         # 如果已经在显示睡眠提醒，不重复触发
         if self.current_reminder is not None and self.current_reminder.kind == "sleep":
             return False
-            
-        if not self.activity.is_recently_active(window_seconds=300):
-            return False
 
         current = datetime.now()
         current_date = current.date()
@@ -166,6 +163,9 @@ class ReminderController(QObject):
             microsecond=0,
         )
         if current < cutoff:
+            # 对于晚间睡眠时间，跨过午夜后重启程序时，仍然应视为“到了睡觉时间”。
+            if self.settings.sleep_hour >= 18 and current.hour < 12:
+                return self.last_sleep_reminder_date != current_date
             return False
 
         return self.last_sleep_reminder_date != current_date
