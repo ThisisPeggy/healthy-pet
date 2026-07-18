@@ -1,4 +1,4 @@
-# healthy_pet
+# healthy-pet
 
 A desktop health reminder pet that helps you develop healthy work habits.
 
@@ -127,8 +127,8 @@ python -m healthy_pet
 ### Method 2: Run from Source
 
 ```bash
-git clone https://github.com/ThisisPeggy/healthy_pet.git
-cd healthy_pet
+git clone https://github.com/ThisisPeggy/healthy-pet.git
+cd healthy-pet
 pip install -r requirements.txt
 python -m healthy_pet
 ```

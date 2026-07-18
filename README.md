@@ -1,4 +1,4 @@
-# healthy_pet
+# healthy-pet
 
 一个桌面健康提醒小宠物，帮助你养成健康的工作习惯。
 
@@ -127,8 +127,8 @@ python -m healthy_pet
 ### 方法二：从源码运行
 
 ```bash
-git clone https://github.com/ThisisPeggy/healthy_pet.git
-cd healthy_pet
+git clone https://github.com/ThisisPeggy/healthy-pet.git
+cd healthy-pet
 pip install -r requirements.txt
 python -m healthy_pet
 ```
